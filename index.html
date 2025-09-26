@@ -410,6 +410,25 @@ document.addEventListener('DOMContentLoaded', function () {
             implementation: "1. Create a standardized Google Doc template for status reports. 2. Develop a Google Apps Script that triggers weekly, feeding data from specified Sheets and Docs into Gemini with a prompt. 3. The script then populates the Doc template with Gemini's output for PM review.",
         },
         {
+            title: "Automated Meeting Preparation",
+            plannable: true,
+            problem: "Preparing for project meetings by creating structured agendas with clear objectives and talking points is a repetitive but critical task.",
+            solution: "A PM provides a meeting topic, a list of attendees, and the duration. Gemini generates a detailed agenda with timed slots, objectives, key discussion points for each topic, and assigned speakers.",
+            outcome: "Saves significant time in meeting preparation, ensures meetings are more focused and productive, and standardizes agenda quality across projects.",
+            implementation: "A simple UI form captures meeting details. This is sent to the Gemini API with a prompt asking it to act as an expert meeting facilitator and generate a professional agenda in a structured format.",
+            interactive_html: `
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Generate an Agenda</h4>
+                    <p class="text-sm text-slate-500 mb-3">Provide the meeting details below to generate a structured agenda.</p>
+                    <textarea id="agenda-details-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="e.g., Topic: Q3 Project Kick-off\nAttendees: Jane (Lead), Tom (Dev), Sarah (Design)\nDuration: 45 minutes"></textarea>
+                    <button id="generate-agenda-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Generate Agenda</button>
+                    <div id="gemini-agenda-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
+                        <p class="text-slate-500 text-center">Generated agenda will appear here.</p>
+                    </div>
+                </div>
+            `
+        },
+        {
             title: "AI-Assisted Project Scoping",
             plannable: false,
             problem: "Defining a clear project scope and breaking it down into manageable work packages is a critical but time-consuming initial step.",
@@ -477,10 +496,26 @@ document.addEventListener('DOMContentLoaded', function () {
     const integrationData = {
         "Google Sheets": { icon: "📊", content: "<ul><li class='mb-2'><strong>Natural Language Queries:</strong> Ask 'What's our current budget variance vs. last month?' or 'Chart the top 5 delayed tasks by owner.' Gemini can interpret the request, analyze the data, and generate the answer or chart directly in the sheet.</li><li class='mb-2'><strong>Automated Analysis & Formula Generation:</strong> Provide raw data and ask Gemini to 'Analyze this data for key trends and create a summary table.' It can also generate complex formulas from plain English descriptions.</li></ul>" },
         "Google Docs": { icon: "📄", content: "<ul><li class='mb-2'><strong>Meeting Summaries from Transcripts:</strong> Feed a Google Meet transcript into a Doc and ask Gemini to 'Summarize this meeting, list all decisions made, and create a table of action items with owners and due dates.'</li><li class='mb-2'><strong>Dynamic Report Drafting:</strong> Create first drafts of project charters or plans. Provide a prompt like 'Draft a project charter for a new mobile app launch, including sections for objectives, scope, stakeholders, and timeline.'</li></ul>" },
-        "Google Slides": { icon: "🖥️", content: "<ul><li class='mb-2'><strong>Full Presentation Generation:</strong> Generate a complete draft presentation for a project update from a Google Doc outline or project plan. Gemini can create slides, write speaker notes, and even suggest layouts.</li><li class='mb-2'><strong>Custom Image & Diagram Generation:</strong> Ask Gemini to 'Create a simple flowchart for our QA process' or 'Generate an image of a diverse team collaborating.' This removes the need to search for stock imagery.</li></ul>" },
+        "Google Slides": { 
+            icon: "🖥️", 
+            content: `<ul><li class='mb-2'><strong>Full Presentation Generation:</strong> Generate a complete draft presentation for a project update from a Google Doc outline or project plan. Gemini can create slides, write speaker notes, and even suggest layouts.</li><li class='mb-2'><strong>Custom Image & Diagram Generation:</strong> Ask Gemini to 'Create a simple flowchart for our QA process' or 'Generate an image of a diverse team collaborating.' This removes the need to search for stock imagery.</li></ul>`,
+            interactive_html: `
+            <div class="mt-4 pt-4 border-t border-slate-200">
+                <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Generate an Image</h4>
+                <p class="text-sm text-slate-500 mb-3">Describe an image you need for your presentation.</p>
+                <textarea id="image-prompt-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="2" placeholder="e.g., A diverse team collaborating around a whiteboard."></textarea>
+                <button id="generate-image-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Generate Image</button>
+                <div id="gemini-image-output" class="mt-4 p-2 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px] flex justify-center items-center">
+                    <p class="text-slate-500 text-center text-sm">Generated image will appear here.</p>
+                </div>
+            </div>`
+        },
         "Google Chat": { icon: "💬", content: "<ul><li class='mb-2'><strong>Conversational Project Assistant:</strong> A bot powered by Gemini can answer team questions by fetching live data from Sheets or Docs. E.g., 'Hey Gemini, what's the latest update on the UI redesign task?'</li><li class='mb-2'><strong>Proactive Alerts:</strong> Configure Gemini to monitor project documents for key events (e.g., a task marked 'at-risk' in Sheets) and automatically send an alert to the relevant Chat space.</li></ul>" },
         "Google Meet": { icon: "📹", content: "<ul><li class='mb-2'><strong>Real-time Insights (Future Capability):</strong> Gemini could provide live meeting support, such as detecting when a discussion is going off-topic or suggesting relevant documents from Drive based on the conversation.</li><li class='mb-2'><strong>Automated Action Item Capture:</strong> Beyond just summarizing, Gemini can identify and automatically capture specific action items mentioned during the call, then draft a follow-up email with those items assigned.</li></ul>" },
-        "Apps Script": { icon: "⚙️", content: `<ul><li class='mb-2'><strong>AI-Powered Code Generation:</strong> This is a key enabler for creating custom AI agents. A PM could describe a workflow like 'When a new row is added to my project intake Sheet, create a new Google Doc from a template and send an email to the project lead.' Gemini can then generate the necessary Apps Script code to build this automation.</li></ul>
+        "Apps Script": { 
+            icon: "⚙️", 
+            content: `<ul><li class='mb-2'><strong>AI-Powered Code Generation:</strong> This is a key enabler for creating custom AI agents. A PM could describe a workflow like 'When a new row is added to my project intake Sheet, create a new Google Doc from a template and send an email to the project lead.' Gemini can then generate the necessary Apps Script code to build this automation.</li></ul>`,
+            interactive_html: `
             <div class="mt-4 pt-4 border-t border-slate-200">
                 <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Generate a Script</h4>
                 <p class="text-sm text-slate-500 mb-3">Describe a simple automation for Google Workspace.</p>
@@ -522,6 +557,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 return callGeminiApi(prompt, retries - 1, delay * 2);
             }
             return "Error: Could not generate the requested content. Please try again later.";
+        }
+    }
+
+    async function callImageGenerationApi(prompt, retries = 3, delay = 1000) {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+        const payload = { instances: [{ prompt: prompt }], parameters: { "sampleCount": 1 } };
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!response.ok) {
+                if (response.status === 429 && retries > 0) {
+                    await new Promise(res => setTimeout(res, delay));
+                    return callImageGenerationApi(prompt, retries - 1, delay * 2);
+                }
+                throw new Error(`Image API request failed with status ${response.status}`);
+            }
+            const result = await response.json();
+            return result?.predictions?.[0]?.bytesBase64Encoded || null;
+        } catch (error) {
+            console.error("Error calling Image Generation API:", error);
+             if (retries > 0) {
+                await new Promise(res => setTimeout(res, delay));
+                return callImageGenerationApi(prompt, retries - 1, delay * 2);
+            }
+            return null;
         }
     }
 
@@ -668,6 +733,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     (text) => `Act as a PMP-certified Project Manager. For a project goal described as "${text}", generate a high-level Work Breakdown Structure (WBS). Present it as a nested list using markdown, with at least 3 levels of detail (e.g., 1. Phase, 1.1. Deliverable, 1.1.1. Task).`,
                     "Please describe your project goal.");
             }
+            if (e.target.id === 'generate-agenda-btn') {
+                handleGeminiRequest('agenda-details-input', 'gemini-agenda-output',
+                    (text) => `Act as an expert meeting facilitator. Based on the following details: "${text}", create a professional, structured meeting agenda. The agenda should include a clear objective, timed sections for each topic, key discussion points, and assigned speakers where appropriate. Format it clearly using markdown.`,
+                    "Please provide meeting details.");
+            }
             if (e.target.id === 'brainstorm-risk-btn') {
                 handleGeminiRequest('risk-context-input', 'gemini-risk-output',
                     (text) => `You are a senior risk management specialist. For the project context: "${text}", brainstorm potential risks. For each risk, provide a title, categorize it (e.g., Technical, Financial, Operational), and suggest a mitigation strategy. Format the output using markdown with a bold title for each risk.`,
@@ -704,10 +774,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const node = e.target.closest('.integration-node');
             if (!node) return;
             const tool = node.dataset.tool;
+            const toolData = integrationData[tool];
             document.querySelectorAll('.integration-node').forEach(n => n.classList.remove('active'));
             node.classList.add('active');
             detailsTitle.textContent = tool;
-            detailsContent.innerHTML = integrationData[tool].content;
+            detailsContent.innerHTML = toolData.content + (toolData.interactive_html || '');
         });
         
         detailsContainer.addEventListener('click', async (e) => {
@@ -723,6 +794,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 const responseText = await callGeminiApi(prompt);
                 const code = responseText.replace(/```javascript\n?|```/g, '').trim();
                 outputContainer.innerHTML = `<pre class="gemini-code-output"><code>${escapeHtml(code)}</code></pre>`;
+            }
+            if (e.target.id === 'generate-image-btn') {
+                const prompt = document.getElementById('image-prompt-input').value.trim();
+                const outputContainer = document.getElementById('gemini-image-output');
+                if (!prompt) {
+                    outputContainer.innerHTML = '<p class="text-red-500 text-sm text-center">Please describe the image you want.</p>';
+                    return;
+                }
+                outputContainer.innerHTML = '<div class="flex justify-center items-center"><div class="loader"></div><p class="ml-4 text-slate-500 text-sm">Generating image...</p></div>';
+                const base64Data = await callImageGenerationApi(prompt);
+                if (base64Data) {
+                    outputContainer.innerHTML = `<img src="data:image/png;base64,${base64Data}" alt="${prompt}" class="rounded-lg max-w-full h-auto" />`;
+                } else {
+                    outputContainer.innerHTML = '<p class="text-red-500 text-sm text-center">Sorry, the image could not be generated.</p>';
+                }
             }
         });
     }
