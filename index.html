@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leveraging Gemini AI in Project Management</title>
+    <!-- Chosen Palette: Cool Gray and Tech Blue -->
+    <!-- Application Structure Plan: The application is designed as a single-page interactive dashboard with a fixed side navigation. This structure was chosen over a linear report format to allow for non-linear exploration, enabling a director-level user to quickly jump to the sections most relevant to them, such as "Benefits" or "Recommendations," without scrolling through the entire document. Key interactions include clickable cards to reveal detailed information, an interactive diagram showing Google Suite integrations, and a dynamic chart for benefit analysis. This user-centric design facilitates easier comprehension and faster decision-making by presenting complex information in digestible, on-demand chunks. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Immediate vs. Long-Term Benefits. -> Goal: Compare/Prioritize. -> Viz Method: Horizontal Bar Chart. -> Interaction: Tooltips on hover showing impact/effort scores. -> Justification: Provides a clear, data-driven visual for prioritizing AI initiatives. -> Library: Chart.js (Canvas).
+        - Report Info: Gemini Integration with Google Suite. -> Goal: Organize/Explain. -> Viz Method: Interactive Diagram. -> Interaction: Clicking a tool icon reveals specific integration use cases. -> Justification: Visually communicates the ecosystem concept more effectively than text. -> Library/Method: HTML/CSS/JS.
+        - Report Info: AI Agent Adoption Strategy. -> Goal: Organize/Plan. -> Viz Method: Phased Timeline Diagram. -> Interaction: N/A, static visual. -> Justification: Clearly illustrates a step-by-step implementation path for a complex strategy. -> Library/Method: HTML/CSS.
+        - Report Info: Use Cases & Recommendations. -> Goal: Inform. -> Viz Method: Interactive Cards. -> Interaction: Clicking a card expands to show details. -> Justification: Breaks down dense information into scannable, user-initiated topics, preventing information overload. -> Library/Method: HTML/CSS/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+            font-weight: 600;
+        }
+        .content-section {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .content-section.active {
+            display: block;
+        }
+        .expand-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .integration-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .integration-node.active {
+            border-color: #3b82f6;
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+        }
+        .hero-gradient-text {
+            background: -webkit-linear-gradient(45deg, #3b82f6, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gemini-output h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .gemini-output ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+         .gemini-output strong {
+            font-weight: 600;
+            color: #334155;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        .gemini-code-output {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+        }
+        .gemini-code-output code {
+            white-space: pre;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <div class="flex flex-col lg:flex-row min-h-screen">
+        <header class="lg:w-80 lg:fixed lg:h-full bg-white border-r border-slate-200 p-6 shadow-sm z-20">
+            <div class="flex items-center space-x-3 mb-8">
+                 <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">G</span>
+                </div>
+                <h1 class="text-xl font-bold text-slate-800">Gemini for PM</h1>
+            </div>
+            <nav id="navigation" class="space-y-2">
+                 <a href="#overview" class="nav-link flex items-center p-3 rounded-lg text-slate-600 hover:bg-slate-100 active">
+                    <span class="w-6 h-6 mr-3">💡</span> Overview
+                </a>
+                <a href="#integration" class="nav-link flex items-center p-3 rounded-lg text-slate-600 hover:bg-slate-100">
+                    <span class="w-6 h-6 mr-3">🔗</span> Google Suite Integration
+                </a>
+                <a href="#benefits" class="nav-link flex items-center p-3 rounded-lg text-slate-600 hover:bg-slate-100">
+                    <span class="w-6 h-6 mr-3">📈</span> Benefits & ROI
+                </a>
+                <a href="#use-cases" class="nav-link flex items-center p-3 rounded-lg text-slate-600 hover:bg-slate-100">
+                    <span class="w-6 h-6 mr-3">📋</span> Use Cases
+                </a>
+                <a href="#ai-agents" class="nav-link flex items-center p-3 rounded-lg text-slate-600 hover:bg-slate-100">
+                     <span class="w-6 h-6 mr-3">🤖</span> AI Agents Strategy
+                </a>
+                <a href="#recommendations" class="nav-link flex items-center p-3 rounded-lg text-slate-600 hover:bg-slate-100">
+                    <span class="w-6 h-6 mr-3">✅</span> Recommendations
+                </a>
+            </nav>
+        </header>
+
+        <main class="flex-1 lg:ml-80 p-6 md:p-10">
+            <div id="content-container">
+                <section id="overview" class="content-section active">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 md:p-12 text-center">
+                        <h2 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">Transforming Project Management with <span class="hero-gradient-text">Gemini AI</span></h2>
+                        <p class="text-lg text-slate-600 max-w-3xl mx-auto mb-8">This analysis provides a comprehensive roadmap for integrating Google's Gemini AI into our project management ecosystem. By leveraging our existing Google Suite, we can unlock unprecedented efficiency, gain predictive insights, and empower our teams to deliver projects faster and more effectively.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 my-8">
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <p class="text-4xl font-bold text-blue-600">80%</p>
+                            <p class="text-slate-600 font-medium mt-1">Potential Reduction in Reporting Time</p>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <p class="text-4xl font-bold text-blue-600">45%</p>
+                            <p class="text-slate-600 font-medium mt-1">Faster Risk Identification</p>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <p class="text-4xl font-bold text-blue-600">30%</p>
+                            <p class="text-slate-600 font-medium mt-1">Increase in PM Productivity</p>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-2xl font-bold text-slate-900 mb-6 text-center">Core Capabilities</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h4 class="font-semibold text-lg mb-2 text-slate-800">📝 Multimodal Understanding</h4>
+                            <p class="text-slate-600">Gemini natively understands and reasons across text, code, images, and data. It can analyze a project schedule in Sheets, review meeting notes in Docs, and examine a design mockup to provide comprehensive, context-aware insights that a human would otherwise have to piece together manually.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h4 class="font-semibold text-lg mb-2 text-slate-800">🚀 Advanced Content Generation</h4>
+                            <p class="text-slate-600">Go beyond simple text. Gemini can generate first drafts of project charters, stakeholder emails tailored to different audiences, detailed status reports with charts, and even code snippets for automation in Apps Script, dramatically reducing ramp-up time for project tasks.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                           <h4 class="font-semibold text-lg mb-2 text-slate-800">📈 Predictive Data Analysis</h4>
+                            <p class="text-slate-600">Using a natural language interface, PMs can ask complex questions of their project data. Gemini can identify hidden trends, forecast potential budget overruns, and flag at-risk tasks by analyzing historical and current data, turning reactive monitoring into proactive management.</p>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h4 class="font-semibold text-lg mb-2 text-slate-800">💬 Conversational Interface</h4>
+                            <p class="text-slate-600">The ability to interact with project data and tools through conversation lowers the technical barrier for all team members. It allows for rapid information retrieval and task execution, making project management tools more accessible and efficient for everyone involved.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="integration" class="content-section">
+                     <h2 class="text-3xl font-bold text-slate-900 mb-4">Google Suite Integration Ecosystem</h2>
+                    <p class="text-lg text-slate-600 mb-8">Our existing investment in Google Suite provides a powerful foundation for Gemini integration. The seamless connectivity between these tools creates a cohesive ecosystem where AI can assist at every stage of the project lifecycle. Click on a tool below to see specific integration examples.</p>
+                    <div class="flex flex-col lg:flex-row gap-8 items-center">
+                        <div class="w-full lg:w-1/2 flex justify-center items-center p-4">
+                            <div class="relative w-96 h-96 flex items-center justify-center">
+                                <!-- Center Gemini Icon -->
+                                <div class="w-32 h-32 bg-blue-100 rounded-full flex items-center justify-center shadow-inner">
+                                    <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center flex-col">
+                                        <span class="text-3xl">💎</span>
+                                        <span class="font-bold text-slate-700 text-sm">Gemini</span>
+                                    </div>
+                                </div>
+                                <!-- Orbiting Nodes Container -->
+                                <div id="integration-nodes" class="absolute top-0 left-0 w-full h-full">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="integration-details" class="w-full lg:w-1/2 bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-[384px]">
+                            <h3 id="details-title" class="font-bold text-xl mb-4 text-slate-800">Select a Tool</h3>
+                            <p id="details-content" class="text-slate-600">Click on a Google Suite tool icon in the diagram to explore how Gemini can enhance its functionality for project management.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="benefits" class="content-section">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">Benefits & Measuring ROI</h2>
+                    <p class="text-lg text-slate-600 mb-8">Adopting Gemini offers a spectrum of benefits, from immediate productivity gains to long-term strategic advantages that can redefine how we manage projects.</p>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                        <div>
+                            <h3 class="text-2xl font-semibold text-sky-700 mb-4">Immediate Benefits</h3>
+                            <ul class="space-y-4">
+                                <li class="flex items-start"><span class="text-xl mr-3 mt-1">⏱️</span><div><strong class="text-slate-700">Reduced Admin Overhead:</strong> Automate meeting summaries from Google Meet transcripts and generate draft status reports.</div></li>
+                                <li class="flex items-start"><span class="text-xl mr-3 mt-1">🚀</span><div><strong class="text-slate-700">Accelerated Communication:</strong> Draft stakeholder updates, emails, and presentations in Google Docs and Slides in seconds.</div></li>
+                                <li class="flex items-start"><span class="text-xl mr-3 mt-1">🔍</span><div><strong class="text-slate-700">Faster Data Insights:</strong> Instantly analyze project timelines and budgets in Google Sheets using natural language queries.</div></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-semibold text-indigo-700 mb-4">Long-Term Advantages</h3>
+                             <ul class="space-y-4">
+                                <li class="flex items-start"><span class="text-xl mr-3 mt-1">🔮</span><div><strong class="text-slate-700">Predictive Risk Analysis:</strong> Identify potential risks by analyzing historical project data and communication patterns across the suite.</div></li>
+                                <li class="flex items-start"><span class="text-xl mr-3 mt-1">⚖️</span><div><strong class="text-slate-700">Optimized Resource Allocation:</strong> Recommend resource assignments based on skills, availability, and project needs by analyzing data across multiple projects.</div></li>
+                                <li class="flex items-start"><span class="text-xl mr-3 mt-1">🧠</span><div><strong class="text-slate-700">Enhanced Decision-Making:</strong> Provide data-backed recommendations for critical project decisions, acting as an AI-powered PMO assistant.</div></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+                        <h3 class="text-xl font-semibold text-center mb-4">Prioritization Matrix: Impact vs. Implementation Effort</h3>
+                         <div class="chart-container">
+                            <canvas id="benefitsChart"></canvas>
+                        </div>
+                    </div>
+                     <div class="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-2xl font-semibold text-slate-800 mb-4">Measuring Success & ROI</h3>
+                        <p class="text-slate-600 mb-6">To justify and track our investment, we must define clear KPIs. Success isn't just about technology; it's about measurable improvements in our project delivery.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-semibold text-slate-700 mb-2">Efficiency Metrics</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>Time spent on manual reporting (target: 80% reduction).</li>
+                                    <li>Time from meeting end to action item distribution.</li>
+                                    <li>Project plan creation time.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-slate-700 mb-2">Effectiveness Metrics</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>Number of risks identified proactively vs. reactively.</li>
+                                    <li>Project on-time delivery rate.</li>
+                                    <li>Stakeholder satisfaction scores (NPS).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="use-cases" class="content-section">
+                     <h2 class="text-3xl font-bold text-slate-900 mb-4">Practical Use Cases</h2>
+                    <p class="text-lg text-slate-600 mb-8">These examples illustrate how Gemini can be applied to solve common project management challenges, transforming our daily workflows. Click each use case to expand for full details.</p>
+                    <div id="use-cases-container" class="space-y-4">
+                    </div>
+                </section>
+
+                <section id="ai-agents" class="content-section">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">Strategy for Leveraging AI Agents</h2>
+                    <p class="text-lg text-slate-600 mb-8">We can progressively deploy AI Agents built on Gemini to automate complex workflows and create a proactive project management ecosystem. This phased approach minimizes disruption and maximizes value over time.</p>
+                    <div class="w-full">
+                        <div class="relative">
+                            <div class="absolute left-1/2 w-0.5 h-full bg-slate-300 hidden md:block"></div>
+                            <div class="space-y-12">
+                                <div class="flex flex-col md:flex-row items-center">
+                                    <div class="w-full md:w-1/2 md:pr-8 text-center md:text-right">
+                                        <div class="inline-block bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                                            <h3 class="text-xl font-bold text-sky-600">Phase 1: Assistant Agents</h3>
+                                            <p class="text-slate-600 mt-2">Deploy simple, task-specific agents to handle routine work. Focus on high-frequency, low-complexity tasks to deliver quick wins.</p>
+                                            <div class="text-sm text-slate-500 mt-3 font-medium">Timeline: 0-6 Months</div>
+                                        </div>
+                                    </div>
+                                    <div class="w-12 h-12 bg-sky-600 rounded-full flex items-center justify-center text-white font-bold my-4 md:my-0 z-10">1</div>
+                                    <div class="w-full md:w-1/2 md:pl-8">
+                                        <p class="text-slate-700 p-4 bg-slate-100 rounded-lg"><strong>Example:</strong> A Google Chat bot that fetches project status from a Google Sheet when a team member asks, providing instant answers without interrupting the PM.</p>
+                                    </div>
+                                </div>
+
+                                 <div class="flex flex-col md:flex-row-reverse items-center">
+                                    <div class="w-full md:w-1/2 md:pl-8 text-center md:text-left">
+                                        <div class="inline-block bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                                            <h3 class="text-xl font-bold text-indigo-600">Phase 2: Integrated Agents</h3>
+                                            <p class="text-slate-600 mt-2">Develop agents that connect multiple Google tools to automate cross-platform workflows and monitor for specific triggers.</p>
+                                            <div class="text-sm text-slate-500 mt-3 font-medium">Timeline: 6-18 Months</div>
+                                        </div>
+                                    </div>
+                                    <div class="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold my-4 md:my-0 z-10">2</div>
+                                    <div class="w-full md:w-1/2 md:pr-8">
+                                        <p class="text-slate-700 p-4 bg-slate-100 rounded-lg"><strong>Example:</strong> An agent monitors a project's budget in Sheets. If it exceeds a threshold, it drafts a notification email in Gmail, alerts the PM in Chat, and schedules a 15-min review meeting in Calendar.</p>
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col md:flex-row items-center">
+                                    <div class="w-full md:w-1/2 md:pr-8 text-center md:text-right">
+                                        <div class="inline-block bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                                            <h3 class="text-xl font-bold text-emerald-600">Phase 3: Proactive Agents</h3>
+                                            <p class="text-slate-600 mt-2">Deploy sophisticated agents that can analyze situations, predict outcomes, and propose actions with minimal human intervention.</p>
+                                            <div class="text-sm text-slate-500 mt-3 font-medium">Timeline: 18+ Months</div>
+                                        </div>
+                                    </div>
+                                    <div class="w-12 h-12 bg-emerald-600 rounded-full flex items-center justify-center text-white font-bold my-4 md:my-0 z-10">3</div>
+                                    <div class="w-full md:w-1/2 md:pl-8">
+                                       <p class="text-slate-700 p-4 bg-slate-100 rounded-lg"><strong>Example:</strong> An agent analyzes delays in a project plan, identifies dependencies, and drafts a revised timeline, a risk mitigation plan, and a stakeholder communication draft in a Google Doc for PM review and approval.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="recommendations" class="content-section">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-4">Recommendations & Best Practices</h2>
+                    <p class="text-lg text-slate-600 mb-8">To ensure a successful and responsible adoption of Gemini AI, we recommend focusing on the following key areas.</p>
+                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                             <h3 class="font-semibold text-lg mb-2 text-slate-800 flex items-center"><span class="text-2xl mr-3">🚀</span> Start with a Pilot Program</h3>
+                            <p class="text-slate-600">Identify one or two projects with clear pain points. Use them to test specific use cases, measure impact, and gather learnings before a wider rollout.</p>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                             <h3 class="font-semibold text-lg mb-2 text-slate-800 flex items-center"><span class="text-2xl mr-3">🎓</span> Invest in Training & Upskilling</h3>
+                            <p class="text-slate-600">Provide training for project managers on AI capabilities and prompt engineering. Foster a culture of experimentation and learning.</p>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-semibold text-lg mb-2 text-slate-800 flex items-center"><span class="text-2xl mr-3">🛡️</span> Establish Data Governance</h3>
+                            <p class="text-slate-600">Define clear guidelines on what project data can be used with AI tools. Ensure data privacy and security protocols are maintained.</p>
+                        </div>
+                         <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-semibold text-lg mb-2 text-slate-800 flex items-center"><span class="text-2xl mr-3">🎯</span> Focus on Augmentation</h3>
+                            <p class="text-slate-600">Position Gemini as a co-pilot for project managers. The goal is to augment human intelligence and free up PMs for strategic, high-value work, not replacement.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-semibold text-lg mb-2 text-slate-800 flex items-center"><span class="text-2xl mr-3">⚠️</span> Address Challenges Proactively</h3>
+                             <p class="text-slate-600">Anticipate challenges like resistance to change, potential for AI "hallucinations," and integration costs. Develop a mitigation plan for each.</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-semibold text-lg mb-2 text-slate-800 flex items-center"><span class="text-2xl mr-3">🤝</span> Maintain Human Oversight</h3>
+                            <p class="text-slate-600">Ensure a human is always in the loop for critical decisions. AI-generated outputs like reports or risk assessments should always be reviewed and validated by a project manager.</p>
+                        </div>
+                    </div>
+                     <div class="mt-10 bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-2xl font-bold text-slate-900 mb-2 text-center">✨ Generate a Sample Pilot Plan</h3>
+                        <p class="text-slate-600 text-center mb-6">Select a use case to instantly generate a high-level project plan using the Gemini API.</p>
+                        <div class="max-w-xl mx-auto">
+                            <div class="flex flex-col sm:flex-row gap-4">
+                                <select id="use-case-selector" class="w-full flex-1 p-3 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                    <!-- Options will be populated by JS -->
+                                </select>
+                                <button id="generate-plan-btn" class="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                                    Generate Plan
+                                </button>
+                            </div>
+                            <div id="gemini-plan-output" class="mt-6 p-6 border border-slate-200 rounded-lg bg-slate-50 min-h-[200px]">
+                                <p class="text-slate-500 text-center">Your generated project plan will appear here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('.content-section');
+
+    function updateActiveState(targetId) {
+        navLinks.forEach(link => {
+            if (link.getAttribute('href') === `#${targetId}`) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+
+        sections.forEach(section => {
+            if (section.id === targetId) {
+                section.classList.add('active');
+            } else {
+                section.classList.remove('active');
+            }
+        });
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            updateActiveState(targetId);
+            window.location.hash = targetId;
+        });
+    });
+
+    const initialHash = window.location.hash.substring(1) || 'overview';
+    updateActiveState(initialHash);
+
+
+    const benefitsData = {
+        labels: ['Automated Reporting', 'Predictive Risk Analysis', 'Smart Scheduling', 'Stakeholder Comms', 'Resource Optimization'],
+        datasets: [{
+            label: 'Potential Impact',
+            data: [7, 9, 8, 6, 9],
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            borderWidth: 1
+        }, {
+            label: 'Implementation Effort',
+            data: [-3, -8, -7, -2, -9],
+            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+            borderColor: 'rgba(239, 68, 68, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    const benefitsConfig = {
+        type: 'bar',
+        data: benefitsData,
+        options: {
+            indexAxis: 'y',
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: {
+                        callback: function(value) {
+                            return Math.abs(value);
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Score (Impact vs. Effort)'
+                    }
+                },
+                y: {
+                    stacked: true,
+                    ticks: {
+                         autoSkip: false,
+                         maxRotation: 0,
+                         minRotation: 0,
+                         callback: function(value, index, values) {
+                            const label = this.getLabelForValue(value);
+                            if (label.length > 16) {
+                                return label.substring(0, 16) + '...';
+                            }
+                            return label;
+                         }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.x !== null) {
+                                label += Math.abs(context.parsed.x);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        },
+    };
+    
+    if(document.getElementById('benefitsChart')) {
+        new Chart(document.getElementById('benefitsChart'), benefitsConfig);
+    }
+
+    const useCasesData = [
+        {
+            title: "Automated Project Status Reporting",
+            problem: "Project managers spend hours manually compiling status updates from various sources, leading to delays and inconsistencies.",
+            solution: "Gemini connects to Google Sheets (timeline/budget) and Docs (meeting notes). It automatically synthesizes this data into a concise status report draft, including progress summaries, budget variance, and key accomplishments.",
+            outcome: "Reduces manual reporting time by up to 80%, ensuring timely and consistent updates for stakeholders.",
+            implementation: "1. Create a standardized Google Doc template for status reports. 2. Develop a Google Apps Script that triggers weekly, feeding data from specified Sheets and Docs into Gemini with a prompt. 3. The script then populates the Doc template with Gemini's output for PM review.",
+        },
+        {
+            title: "Intelligent Risk Assessment",
+            problem: "Risks are often identified too late, based on gut feelings rather than data. It's difficult to see emerging patterns across project communications.",
+            solution: "Gemini analyzes communications in Google Chat and comments in Docs for negative sentiment or keywords (e.g., 'delay,' 'blocker,' 'issue'). It cross-references these with schedule data in Sheets to flag potential risks with a confidence score in a central risk register.",
+            outcome: "Enables proactive risk management, allowing teams to address issues before they escalate into major problems.",
+            implementation: "1. Define a risk keyword library. 2. Use Apps Script to periodically scan relevant Chat spaces and Docs. 3. Feed findings to the Gemini API for analysis and scoring. 4. Update a master Google Sheet that serves as the project's risk register.",
+        },
+        {
+            title: "On-Demand Stakeholder Communication",
+            problem: "Crafting tailored communications for different stakeholders (technical team, executives, clients) is time-consuming.",
+            solution: "A PM provides a few bullet points about a project update into a simple UI. Gemini generates multiple versions of the message, tailored to different audiences: a detailed technical update for Chat, a high-level executive summary for email, and a client-friendly update for Slides.",
+            outcome: "Improves communication efficiency and effectiveness, ensuring all stakeholders receive relevant information in the right format.",
+            implementation: "1. Build a simple front-end using Google Forms or a small web app. 2. On submission, the input is sent to Gemini via an API call with multiple prompts defining the target audience for each output. 3. The generated text is returned to the user for copy-pasting.",
+            interactive_html: `
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Draft an Email</h4>
+                    <p class="text-sm text-slate-500 mb-3">Enter a brief update and select an audience to see Gemini in action.</p>
+                    <textarea id="email-update-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="3" placeholder="e.g., UI mockups are complete, but backend is delayed by 1 week."></textarea>
+                    <div class="flex items-center gap-4 mt-2">
+                        <select id="email-audience-selector" class="flex-grow p-2 border border-slate-300 rounded-lg bg-white text-sm">
+                            <option>Executive Team</option>
+                            <option>Technical Team</option>
+                            <option>Client</option>
+                        </select>
+                        <button id="draft-email-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm">Draft</button>
+                    </div>
+                    <div id="gemini-email-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[100px] text-sm">
+                        <p class="text-slate-500">Generated email will appear here.</p>
+                    </div>
+                </div>
+            `
+        }
+    ];
+
+    const useCasesContainer = document.getElementById('use-cases-container');
+    const useCaseSelector = document.getElementById('use-case-selector');
+
+    if (useCasesContainer) {
+        useCasesContainer.innerHTML = useCasesData.map((uc) => `
+            <div class="expand-card bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5 flex justify-between items-center">
+                    <h3 class="font-semibold text-lg text-slate-800">${uc.title}</h3>
+                    <span class="transform transition-transform duration-300 text-2xl text-slate-400">+</span>
+                </div>
+                <div class="px-5 pb-5 text-slate-600 hidden">
+                    <strong class="text-slate-700 block mb-1">Problem:</strong>
+                    <p class="mb-3">${uc.problem}</p>
+                    <strong class="text-slate-700 block mb-1">Gemini Solution:</strong>
+                    <p class="mb-3">${uc.solution}</p>
+                    <strong class="text-slate-700 block mb-1">Outcome:</strong>
+                    <p class="font-medium text-blue-600 mb-4">${uc.outcome}</p>
+                    <div class="border-t border-slate-200 pt-4">
+                        <strong class="text-slate-700 block mb-2">Implementation Snapshot:</strong>
+                        <p class="text-sm">${uc.implementation}</p>
+                    </div>
+                    ${uc.interactive_html || ''}
+                </div>
+            </div>
+        `).join('');
+
+        document.querySelectorAll('.expand-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const content = card.querySelector('div:last-child');
+                const icon = card.querySelector('span');
+                content.classList.toggle('hidden');
+                icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(45deg)';
+            });
+        });
+
+        useCasesContainer.addEventListener('click', async (e) => {
+            if (e.target && e.target.id === 'draft-email-btn') {
+                const updateText = document.getElementById('email-update-input').value;
+                const audience = document.getElementById('email-audience-selector').value;
+                const outputContainer = document.getElementById('gemini-email-output');
+                
+                if (!updateText) {
+                    outputContainer.innerHTML = '<p class="text-red-500">Please enter an update first.</p>';
+                    return;
+                }
+
+                outputContainer.innerHTML = '<div class="flex items-center"><div class="loader !w-4 !h-4"></div><p class="ml-2 text-slate-500 text-sm">Drafting email...</p></div>';
+
+                const prompt = `Act as a Senior Project Manager. Based on the following update: "${updateText}", draft a professional email to the "${audience}". Tailor the tone, level of technical detail, and key message appropriately for that audience. Use standard email formatting with a subject line (Subject: ...).`;
+                
+                const responseText = await callGeminiApi(prompt);
+                const formattedHtml = responseText.replace(/\n/g, '<br>');
+                outputContainer.innerHTML = formattedHtml;
+            }
+        });
+    }
+
+    if(useCaseSelector){
+        useCasesData.forEach(uc => {
+            const option = document.createElement('option');
+            option.value = uc.title;
+            option.textContent = uc.title;
+            useCaseSelector.appendChild(option);
+        });
+    }
+
+    const integrationData = {
+        "Google Sheets": {
+            icon: "📊",
+            content: "<ul><li class='mb-2'><strong>Natural Language Queries:</strong> Ask 'What's our current budget variance vs. last month?' or 'Chart the top 5 delayed tasks by owner.' Gemini can interpret the request, analyze the data, and generate the answer or chart directly in the sheet.</li><li class='mb-2'><strong>Automated Analysis & Formula Generation:</strong> Provide raw data and ask Gemini to 'Analyze this data for key trends and create a summary table.' It can also generate complex formulas from plain English descriptions.</li></ul>"
+        },
+        "Google Docs": {
+            icon: "📄",
+            content: "<ul><li class='mb-2'><strong>Meeting Summaries from Transcripts:</strong> Feed a Google Meet transcript into a Doc and ask Gemini to 'Summarize this meeting, list all decisions made, and create a table of action items with owners and due dates.'</li><li class='mb-2'><strong>Dynamic Report Drafting:</strong> Create first drafts of project charters or plans. Provide a prompt like 'Draft a project charter for a new mobile app launch, including sections for objectives, scope, stakeholders, and timeline.'</li></ul>"
+        },
+        "Google Slides": {
+            icon: "🖥️",
+            content: "<ul><li class='mb-2'><strong>Full Presentation Generation:</strong> Generate a complete draft presentation for a project update from a Google Doc outline or project plan. Gemini can create slides, write speaker notes, and even suggest layouts.</li><li class='mb-2'><strong>Custom Image & Diagram Generation:</strong> Ask Gemini to 'Create a simple flowchart for our QA process' or 'Generate an image of a diverse team collaborating.' This removes the need to search for stock imagery.</li></ul>"
+        },
+        "Google Chat": {
+            icon: "💬",
+            content: "<ul><li class='mb-2'><strong>Conversational Project Assistant:</strong> A bot powered by Gemini can answer team questions by fetching live data from Sheets or Docs. E.g., 'Hey Gemini, what's the latest update on the UI redesign task?'</li><li class='mb-2'><strong>Proactive Alerts:</strong> Configure Gemini to monitor project documents for key events (e.g., a task marked 'at-risk' in Sheets) and automatically send an alert to the relevant Chat space.</li></ul>"
+        },
+        "Google Meet": {
+            icon: "📹",
+            content: "<ul><li class='mb-2'><strong>Real-time Insights (Future Capability):</strong> Gemini could provide live meeting support, such as detecting when a discussion is going off-topic or suggesting relevant documents from Drive based on the conversation.</li><li class='mb-2'><strong>Automated Action Item Capture:</strong> Beyond just summarizing, Gemini can identify and automatically capture specific action items mentioned during the call, then draft a follow-up email with those items assigned.</li></ul>"
+        },
+         "Apps Script": {
+            icon: "⚙️",
+            content: `<ul><li class='mb-2'><strong>AI-Powered Code Generation:</strong> This is a key enabler for creating custom AI agents. A PM could describe a workflow like 'When a new row is added to my project intake Sheet, create a new Google Doc from a template and send an email to the project lead.' Gemini can then generate the necessary Apps Script code to build this automation.</li></ul>
+            <div class="mt-4 pt-4 border-t border-slate-200">
+                <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Generate a Script</h4>
+                <p class="text-sm text-slate-500 mb-3">Describe a simple automation for Google Workspace.</p>
+                <textarea id="script-request-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="3" placeholder="e.g., When a file is added to a specific Drive folder, log its name in a Google Sheet."></textarea>
+                <button id="generate-script-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Generate Script</button>
+                <div id="gemini-script-output" class="mt-4 min-h-[100px]">
+                    <p class="text-slate-500 text-sm text-center pt-4">Generated Apps Script code will appear here.</p>
+                </div>
+            </div>`
+        },
+    };
+
+    const integrationNodesContainer = document.getElementById('integration-nodes');
+    const detailsTitle = document.getElementById('details-title');
+    const detailsContent = document.getElementById('details-content');
+    const integrationDetailsContainer = document.getElementById('integration-details');
+
+    if (integrationNodesContainer) {
+        const radius = 140; 
+        const containerWidth = 384; 
+        const containerHeight = 384; 
+        const centerX = containerWidth / 2;
+        const centerY = containerHeight / 2;
+        
+        const tools = Object.keys(integrationData);
+        const angleStep = (2 * Math.PI) / tools.length;
+
+        tools.forEach((tool, i) => {
+            const angle = i * angleStep - Math.PI / 2;
+            const x = centerX + radius * Math.cos(angle) - 32; 
+            const y = centerY + radius * Math.sin(angle) - 32;
+
+            const node = document.createElement('div');
+            node.className = 'integration-node absolute w-16 h-16 bg-white rounded-full flex items-center justify-center flex-col shadow-md border-2 border-slate-200 hover:shadow-lg hover:border-blue-400';
+            node.style.left = `${x}px`;
+            node.style.top = `${y}px`;
+            node.dataset.tool = tool;
+            node.innerHTML = `<span class="text-2xl">${integrationData[tool].icon}</span><span class="text-xs font-medium text-slate-600">${tool.split(' ')[1] || tool}</span>`;
+
+            node.addEventListener('click', () => {
+                document.querySelectorAll('.integration-node').forEach(n => n.classList.remove('active'));
+                node.classList.add('active');
+                detailsTitle.textContent = tool;
+                detailsContent.innerHTML = integrationData[tool].content;
+            });
+            integrationNodesContainer.appendChild(node);
+        });
+
+        integrationDetailsContainer.addEventListener('click', async (e) => {
+            if (e.target && e.target.id === 'generate-script-btn') {
+                const requestText = document.getElementById('script-request-input').value;
+                const outputContainer = document.getElementById('gemini-script-output');
+                
+                if (!requestText) {
+                    outputContainer.innerHTML = '<p class="text-red-500 text-sm text-center">Please describe the automation you want to build.</p>';
+                    return;
+                }
+
+                outputContainer.innerHTML = '<div class="flex justify-center items-center"><div class="loader"></div><p class="ml-4 text-slate-500">Generating script...</p></div>';
+
+                const prompt = `Act as an expert Google Apps Script developer. Based on the user's request, write a clean, well-commented Google Apps Script function to accomplish the task. The request is: "${requestText}". Only provide the complete runnable code inside a markdown code block for javascript, with no explanatory text before or after the code block.`;
+                
+                const responseText = await callGeminiApi(prompt);
+                const code = responseText.replace(/```javascript\n|```/g, '').trim();
+                outputContainer.innerHTML = `<pre class="gemini-code-output"><code>${escapeHtml(code)}</code></pre>`;
+            }
+        });
+    }
+
+    const generatePlanBtn = document.getElementById('generate-plan-btn');
+    const geminiOutputContainer = document.getElementById('gemini-plan-output');
+
+    async function callGeminiApi(prompt, retries = 3, delay = 1000) {
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+        const payload = {
+            contents: [{ parts: [{ text: prompt }] }],
+        };
+
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                 if (response.status === 429 && retries > 0) {
+                    await new Promise(res => setTimeout(res, delay));
+                    return callGeminiApi(prompt, retries - 1, delay * 2);
+                }
+                throw new Error(`API request failed with status ${response.status}`);
+            }
+
+            const result = await response.json();
+            const candidate = result.candidates?.[0];
+            if (candidate && candidate.content?.parts?.[0]?.text) {
+                return candidate.content.parts[0].text;
+            } else {
+                throw new Error("Invalid response structure from API.");
+            }
+        } catch (error) {
+            console.error("Error calling Gemini API:", error);
+            if (retries > 0) {
+                await new Promise(res => setTimeout(res, delay));
+                return callGeminiApi(prompt, retries - 1, delay * 2);
+            }
+            return "Error: Could not generate the plan. Please try again later.";
+        }
+    }
+
+    function formatGeminiResponse(text) {
+        let html = text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/^\s*###\s*(.*)/gm, '<h3>$1</h3>')
+            .replace(/^\s*##\s*(.*)/gm, '<h3>$1</h3>')
+            .replace(/^\s*#\s*(.*)/gm, '<h3>$1</h3>')
+            .replace(/^\*\s(.*)/gm, '<ul><li>$1</li></ul>')
+            .replace(/<\/ul>\s*<ul>/g, ''); 
+        return `<div class="gemini-output">${html}</div>`;
+    }
+
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    if (generatePlanBtn) {
+        generatePlanBtn.addEventListener('click', async () => {
+            const selectedUseCase = useCaseSelector.value;
+            geminiOutputContainer.innerHTML = '<div class="flex justify-center items-center"><div class="loader"></div><p class="ml-4 text-slate-500">Generating plan...</p></div>';
+
+            const prompt = `Act as a Senior Technical Project Manager. For a pilot project titled "${selectedUseCase}", generate a concise, one-page project plan. The plan should include the following sections, using markdown for headers: ### Project Goal, ### Scope (In-Scope & Out-of-Scope), ### Key Milestones & Timeline (provide a simple 3-month timeline), ### Success Metrics (KPIs), and ### Potential Risks. Keep the language professional and suitable for an executive audience.`;
+            
+            const responseText = await callGeminiApi(prompt);
+            const formattedHtml = formatGeminiResponse(responseText);
+
+            geminiOutputContainer.innerHTML = formattedHtml;
+        });
+    }
+
+});
+</script>
+
+</body>
+</html>
+
