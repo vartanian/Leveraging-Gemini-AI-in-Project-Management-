@@ -457,6 +457,44 @@ document.addEventListener('DOMContentLoaded', function () {
             `
         },
         {
+            title: "Strategic Stakeholder Analysis",
+            plannable: true,
+            problem: "Properly identifying and managing stakeholder expectations is crucial but often relies on manual, subjective analysis.",
+            solution: "A PM lists stakeholders and their known interests. Gemini analyzes this information to plot them on a Power/Interest grid and recommends specific engagement strategies for each quadrant (e.g., 'Manage Closely', 'Keep Informed').",
+            outcome: "Provides a structured, strategic framework for stakeholder management, helping PMs prioritize communication efforts and proactively manage relationships.",
+            implementation: "A UI allows the PM to input a list of stakeholders and their context. The data is sent to Gemini with a prompt to perform a stakeholder analysis and provide strategic recommendations, which are then displayed back to the user.",
+            interactive_html: `
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Analyze Stakeholders</h4>
+                    <p class="text-sm text-slate-500 mb-3">List stakeholders and their interests to generate an analysis and communication plan.</p>
+                    <textarea id="stakeholder-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="e.g., CEO: interested in ROI.\nLead Developer: concerned with technical debt.\nMarketing: needs launch date for campaigns."></textarea>
+                    <button id="generate-stakeholder-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Analyze Stakeholders</button>
+                    <div id="gemini-stakeholder-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
+                        <p class="text-slate-500 text-center">Stakeholder analysis will appear here.</p>
+                    </div>
+                </div>
+            `
+        },
+        {
+            title: "AI-Powered Lessons Learned",
+            plannable: true,
+            problem: "After a project, valuable lessons from retrospectives are often lost in lengthy notes and are rarely synthesized into actionable insights for future projects.",
+            solution: "A PM pastes raw, unstructured notes from a post-mortem session. Gemini analyzes the text to identify key themes, successes, and challenges, then synthesizes them into a structured 'Lessons Learned' document.",
+            outcome: "Transforms raw feedback into an organized, valuable asset for organizational learning, ensuring that insights from one project directly benefit future initiatives.",
+            implementation: "A large textarea in a UI accepts the retrospective notes. An API call is made to Gemini with a prompt asking it to act as an experienced PM and synthesize the notes into 'What Went Well', 'What Could Be Improved', and 'Recommendations' sections.",
+            interactive_html: `
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Synthesize Lessons Learned</h4>
+                    <p class="text-sm text-slate-500 mb-3">Paste your raw notes from a project retrospective to create a summary document.</p>
+                    <textarea id="lessons-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="5" placeholder="e.g., - The daily stand-ups were efficient.\n- Communication with the design team was a bottleneck.\n- We should have allocated more time for UAT.\n- The team collaborated well using Chat."></textarea>
+                    <button id="generate-lessons-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Synthesize Lessons</button>
+                    <div id="gemini-lessons-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
+                        <p class="text-slate-500 text-center">Your 'Lessons Learned' summary will appear here.</p>
+                    </div>
+                </div>
+            `
+        },
+        {
             title: "AI-Assisted Project Scoping",
             plannable: false,
             problem: "Defining a clear project scope and breaking it down into manageable work packages is a critical but time-consuming initial step.",
@@ -704,6 +742,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const selector = document.getElementById('use-case-selector');
         if (!container || !selector) return;
 
+        // Sort use cases alphabetically by title for consistent ordering
+        useCasesData.sort((a, b) => a.title.localeCompare(b.title));
+
         container.innerHTML = useCasesData.map(uc => `
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <div class="expand-card-header p-5 flex justify-between items-center">
@@ -741,7 +782,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const outputEl = document.getElementById(outputId);
                 const inputText = inputEl.value.trim();
                 if (!inputText) {
-                    outputEl.innerHTML = `<p class="text-red-500">${errorMsg}</p>`;
+                    outputEl.innerHTML = `<p class="text-red-500 text-sm text-center">${errorMsg}</p>`;
                     return;
                 }
                 outputEl.innerHTML = `<div class="flex justify-center items-center"><div class="loader"></div><p class="ml-4 text-slate-500">Generating...</p></div>`;
@@ -750,36 +791,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 outputEl.innerHTML = formatGeminiResponse(response);
             };
 
-            if (e.target.id === 'draft-email-btn') {
-                const audience = document.getElementById('email-audience-selector').value;
-                handleGeminiRequest('email-update-input', 'gemini-email-output',
-                    (text) => `Act as a Senior Project Manager. Based on the following update: "${text}", draft a professional email to the "${audience}". Tailor the tone, level of technical detail, and key message appropriately for that audience. Use standard email formatting with a subject line (Subject: ...).`,
-                    "Please enter an update first.");
-            }
-            if (e.target.id === 'generate-wbs-btn') {
-                handleGeminiRequest('wbs-goal-input', 'gemini-wbs-output',
+            const targetId = e.target.id;
+            const handlers = {
+                'draft-email-btn': () => {
+                    const audience = document.getElementById('email-audience-selector').value;
+                    handleGeminiRequest('email-update-input', 'gemini-email-output',
+                        (text) => `Act as a Senior Project Manager. Based on the following update: "${text}", draft a professional email to the "${audience}". Tailor the tone, level of technical detail, and key message appropriately for that audience. Use standard email formatting with a subject line (Subject: ...).`,
+                        "Please enter an update first.");
+                },
+                'generate-wbs-btn': () => handleGeminiRequest('wbs-goal-input', 'gemini-wbs-output',
                     (text) => `Act as a PMP-certified Project Manager. For a project goal described as "${text}", generate a high-level Work Breakdown Structure (WBS). Present it as a nested list using markdown, with at least 3 levels of detail (e.g., 1. Phase, 1.1. Deliverable, 1.1.1. Task).`,
-                    "Please describe your project goal.");
-            }
-            if (e.target.id === 'generate-agenda-btn') {
-                handleGeminiRequest('agenda-details-input', 'gemini-agenda-output',
+                    "Please describe your project goal."),
+                'generate-agenda-btn': () => handleGeminiRequest('agenda-details-input', 'gemini-agenda-output',
                     (text) => `Act as an expert meeting facilitator. Based on the following details: "${text}", create a professional, structured meeting agenda. The agenda should include a clear objective, timed sections for each topic, key discussion points, and assigned speakers where appropriate. Format it clearly using markdown.`,
-                    "Please provide meeting details.");
-            }
-            if (e.target.id === 'generate-followup-btn') {
-                handleGeminiRequest('followup-notes-input', 'gemini-followup-output',
+                    "Please provide meeting details."),
+                'generate-followup-btn': () => handleGeminiRequest('followup-notes-input', 'gemini-followup-output',
                     (text) => `Act as an efficient project coordinator. Based on the following raw meeting notes: "${text}", draft a professional follow-up email. The email should have a clear subject line, a brief summary of key decisions, and a bulleted list of all action items with owners and deadlines clearly identified.`,
-                    "Please provide your meeting notes.");
-            }
-            if (e.target.id === 'translate-text-btn') {
-                handleGeminiRequest('jargon-input', 'gemini-translate-output',
+                    "Please provide your meeting notes."),
+                'translate-text-btn': () => handleGeminiRequest('jargon-input', 'gemini-translate-output',
                     (text) => `Act as a communications expert specializing in bridging the gap between technical and business teams. Translate the following technical update into clear, concise, business-friendly language suitable for a non-technical executive audience. Focus on the business impact and outcomes, not just the technical tasks. Technical Update: "${text}"`,
-                    "Please provide the technical text to translate.");
-            }
-            if (e.target.id === 'brainstorm-risk-btn') {
-                handleGeminiRequest('risk-context-input', 'gemini-risk-output',
+                    "Please provide the technical text to translate."),
+                'brainstorm-risk-btn': () => handleGeminiRequest('risk-context-input', 'gemini-risk-output',
                     (text) => `You are a senior risk management specialist. For the project context: "${text}", brainstorm potential risks. For each risk, provide a title, categorize it (e.g., Technical, Financial, Operational), and suggest a mitigation strategy. Format the output using markdown with a bold title for each risk.`,
-                    "Please describe the project context.");
+                    "Please describe the project context."),
+                'generate-stakeholder-btn': () => handleGeminiRequest('stakeholder-input', 'gemini-stakeholder-output',
+                    (text) => `Act as a senior project strategist. Based on the following stakeholder list: "${text}", create a stakeholder analysis. First, categorize each stakeholder on a Power/Interest Grid (High Power/High Interest, High Power/Low Interest, etc.). Second, for each category, provide a recommended communication strategy. Format the output clearly using markdown.`,
+                    "Please list your stakeholders."),
+                'generate-lessons-btn': () => handleGeminiRequest('lessons-input', 'gemini-lessons-output',
+                    (text) => `Act as an experienced project manager conducting a project post-mortem analysis. Based on the following raw notes: "${text}", synthesize the information into a formal 'Lessons Learned' document. Structure your response into three clear sections using markdown headings: ### What Went Well (Successes), ### What Could Be Improved (Challenges), and ### Key Recommendations for Future Projects.`,
+                    "Please provide your retrospective notes.")
+            };
+            
+            if (handlers[targetId]) {
+                handlers[targetId]();
             }
         });
     }
