@@ -410,12 +410,12 @@ document.addEventListener('DOMContentLoaded', function () {
             implementation: "1. Create a standardized Google Doc template for status reports. 2. Develop a Google Apps Script that triggers weekly, feeding data from specified Sheets and Docs into Gemini with a prompt. 3. The script then populates the Doc template with Gemini's output for PM review.",
         },
         {
-            title: "Automated Meeting Preparation",
+            title: "Automated Meeting Prep & Follow-up",
             plannable: true,
-            problem: "Preparing for project meetings by creating structured agendas with clear objectives and talking points is a repetitive but critical task.",
-            solution: "A PM provides a meeting topic, a list of attendees, and the duration. Gemini generates a detailed agenda with timed slots, objectives, key discussion points for each topic, and assigned speakers.",
-            outcome: "Saves significant time in meeting preparation, ensures meetings are more focused and productive, and standardizes agenda quality across projects.",
-            implementation: "A simple UI form captures meeting details. This is sent to the Gemini API with a prompt asking it to act as an expert meeting facilitator and generate a professional agenda in a structured format.",
+            problem: "Preparing for meetings and sending timely follow-ups with action items are repetitive but critical tasks for project alignment.",
+            solution: "Gemini can generate a structured agenda based on a topic and attendees. After the meeting, it can take raw notes and extract key decisions and action items to draft a concise follow-up email.",
+            outcome: "Saves significant time, ensures meetings are focused, and improves accountability by clearly documenting and distributing next steps.",
+            implementation: "A UI form captures meeting details for agenda generation. A second UI takes raw notes post-meeting. Both UIs send prompts to the Gemini API to generate the respective structured content.",
             interactive_html: `
                 <div class="mt-4 pt-4 border-t border-slate-200">
                     <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Generate an Agenda</h4>
@@ -424,6 +424,34 @@ document.addEventListener('DOMContentLoaded', function () {
                     <button id="generate-agenda-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Generate Agenda</button>
                     <div id="gemini-agenda-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
                         <p class="text-slate-500 text-center">Generated agenda will appear here.</p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Draft a Follow-up</h4>
+                    <p class="text-sm text-slate-500 mb-3">Paste your raw meeting notes to generate a follow-up email with action items.</p>
+                    <textarea id="followup-notes-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="5" placeholder="e.g., - Tom to finish API endpoints by Friday.\n- Sarah confirmed final designs are approved.\n- Decision: launch will be on the 15th.\n- Jane needs to send client the updated timeline."></textarea>
+                    <button id="generate-followup-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Draft Follow-up</button>
+                    <div id="gemini-followup-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
+                        <p class="text-slate-500 text-center">Generated follow-up email will appear here.</p>
+                    </div>
+                </div>
+            `
+        },
+        {
+            title: "Translate Technical Updates",
+            plannable: true,
+            problem: "Technical teams often provide updates filled with jargon that is difficult for business stakeholders to understand, leading to miscommunication.",
+            solution: "A PM can paste a technical update into a simple interface. Gemini rewrites the update in clear, business-friendly language, focusing on impact and outcomes rather than technical implementation details.",
+            outcome: "Ensures clear communication between technical and non-technical stakeholders, reduces misunderstandings, and helps executives grasp project progress quickly.",
+            implementation: "A UI with a text area accepts the technical jargon. An API call to Gemini uses a prompt specifically engineered to translate technical concepts into simple business terms. The translated text is then displayed.",
+            interactive_html: `
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Translate Jargon</h4>
+                    <p class="text-sm text-slate-500 mb-3">Paste a technical update below to translate it for a business audience.</p>
+                    <textarea id="jargon-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="e.g., We've refactored the legacy authentication module and migrated the user database to the new PostgreSQL instance."></textarea>
+                    <button id="translate-text-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Translate Text</button>
+                    <div id="gemini-translate-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
+                        <p class="text-slate-500 text-center">Translated text will appear here.</p>
                     </div>
                 </div>
             `
@@ -738,6 +766,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     (text) => `Act as an expert meeting facilitator. Based on the following details: "${text}", create a professional, structured meeting agenda. The agenda should include a clear objective, timed sections for each topic, key discussion points, and assigned speakers where appropriate. Format it clearly using markdown.`,
                     "Please provide meeting details.");
             }
+            if (e.target.id === 'generate-followup-btn') {
+                handleGeminiRequest('followup-notes-input', 'gemini-followup-output',
+                    (text) => `Act as an efficient project coordinator. Based on the following raw meeting notes: "${text}", draft a professional follow-up email. The email should have a clear subject line, a brief summary of key decisions, and a bulleted list of all action items with owners and deadlines clearly identified.`,
+                    "Please provide your meeting notes.");
+            }
+            if (e.target.id === 'translate-text-btn') {
+                handleGeminiRequest('jargon-input', 'gemini-translate-output',
+                    (text) => `Act as a communications expert specializing in bridging the gap between technical and business teams. Translate the following technical update into clear, concise, business-friendly language suitable for a non-technical executive audience. Focus on the business impact and outcomes, not just the technical tasks. Technical Update: "${text}"`,
+                    "Please provide the technical text to translate.");
+            }
             if (e.target.id === 'brainstorm-risk-btn') {
                 handleGeminiRequest('risk-context-input', 'gemini-risk-output',
                     (text) => `You are a senior risk management specialist. For the project context: "${text}", brainstorm potential risks. For each risk, provide a title, categorize it (e.g., Technical, Financial, Operational), and suggest a mitigation strategy. Format the output using markdown with a bold title for each risk.`,
@@ -839,3 +877,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </body>
 </html>
+
