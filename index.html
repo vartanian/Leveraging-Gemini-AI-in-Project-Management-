@@ -401,6 +401,44 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // --- Data ---
     const useCasesData = [
+         {
+            title: "Agile User Story Generation",
+            plannable: true,
+            problem: "Translating high-level product features into well-defined user stories for development teams is a detailed, time-consuming task for project and product managers.",
+            solution: "A PM provides a feature description. Gemini breaks it down into multiple, well-formed user stories, each following the standard 'As a [user type], I want to [action], so that [benefit]' format, complete with suggested acceptance criteria.",
+            outcome: "Drastically accelerates the backlog creation process, ensures consistency in story format, and provides a strong starting point for sprint planning and refinement sessions.",
+            implementation: "A simple UI with a textarea accepts the feature description. An API call to Gemini uses a prompt engineered to act as an expert Agile Product Owner, requesting user stories and acceptance criteria.",
+            interactive_html: `
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Generate User Stories</h4>
+                    <p class="text-sm text-slate-500 mb-3">Describe a product feature to generate agile user stories and acceptance criteria.</p>
+                    <textarea id="feature-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="e.g., A user profile page where users can update their name, profile picture, and bio."></textarea>
+                    <button id="generate-stories-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Generate Stories</button>
+                    <div id="gemini-stories-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
+                        <p class="text-slate-500 text-center">Generated user stories will appear here.</p>
+                    </div>
+                </div>
+            `
+        },
+        {
+            title: "Project Communication Plan",
+            plannable: true,
+            problem: "Developing a strategic communication plan that addresses the needs of all stakeholders is a critical but often overlooked part of initial project setup.",
+            solution: "A PM provides a brief project description and lists the key stakeholders. Gemini generates a structured communication plan, outlining the purpose, channel, frequency, and audience for key project communications (e.g., status reports, steering committee meetings).",
+            outcome: "Ensures that stakeholder communication is strategic and planned from the outset, reducing the risk of miscommunication and ensuring the right people get the right information at the right time.",
+            implementation: "A UI accepts project context. An API call to Gemini uses a prompt asking it to act as a senior communications manager and create a formal communication plan based on the provided inputs.",
+            interactive_html: `
+                <div class="mt-4 pt-4 border-t border-slate-200">
+                    <h4 class="font-semibold text-slate-800 mb-2">✨ Try it Live: Create a Communication Plan</h4>
+                    <p class="text-sm text-slate-500 mb-3">Describe your project and stakeholders to generate a communication plan.</p>
+                    <textarea id="comm-plan-input" class="w-full p-2 border border-slate-300 rounded-lg text-sm" rows="4" placeholder="e.g., Project: Office 365 Migration for 500 employees. Stakeholders: CEO, IT Director, Department Heads, All Employees."></textarea>
+                    <button id="generate-comm-plan-btn" class="bg-indigo-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm mt-2 w-full">Generate Plan</button>
+                    <div id="gemini-comm-plan-output" class="mt-4 p-4 border border-slate-200 rounded-lg bg-slate-50 min-h-[150px]">
+                        <p class="text-slate-500 text-center">Generated communication plan will appear here.</p>
+                    </div>
+                </div>
+            `
+        },
         {
             title: "Automated Project Status Reporting",
             plannable: true,
@@ -819,7 +857,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     "Please list your stakeholders."),
                 'generate-lessons-btn': () => handleGeminiRequest('lessons-input', 'gemini-lessons-output',
                     (text) => `Act as an experienced project manager conducting a project post-mortem analysis. Based on the following raw notes: "${text}", synthesize the information into a formal 'Lessons Learned' document. Structure your response into three clear sections using markdown headings: ### What Went Well (Successes), ### What Could Be Improved (Challenges), and ### Key Recommendations for Future Projects.`,
-                    "Please provide your retrospective notes.")
+                    "Please provide your retrospective notes."),
+                'generate-stories-btn': () => handleGeminiRequest('feature-input', 'gemini-stories-output',
+                    (text) => `Act as an expert Agile Product Owner. For the feature described as: "${text}", write a set of clear, well-formed user stories. Each story must follow the format: 'As a [user type], I want [to perform an action], so that [I can achieve a benefit].' Also, provide a bulleted list of acceptance criteria for each story.`,
+                    "Please describe the feature."),
+                'generate-comm-plan-btn': () => handleGeminiRequest('comm-plan-input', 'gemini-comm-plan-output',
+                    (text) => `Act as a Senior Project Communications Manager. Based on the project context: "${text}", create a strategic communication plan. The plan should be structured with markdown headings for: ### Key Stakeholders, ### Communication Channels, ### Cadence & Frequency, and ### Key Messages for each stakeholder group.`,
+                    "Please describe the project context.")
             };
             
             if (handlers[targetId]) {
